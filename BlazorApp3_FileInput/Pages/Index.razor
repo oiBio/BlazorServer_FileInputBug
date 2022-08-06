@@ -1,0 +1,83 @@
+﻿@page "/"
+
+<PageTitle>Index</PageTitle>
+
+<div>
+    Pick two files (less than 500kb) and press Start Upload... You will get an Timeout!
+</div>
+
+
+<InputFile OnChange="File1">Pick File 1</InputFile>
+<InputFile OnChange="File2">Pick File 2</InputFile>
+
+
+<button @onclick="StartUpload">
+    Start Upload (will time out)
+</button>
+<button @onclick="StartUpload_Working">
+    Start Upload (working)
+</button>
+
+<div>
+    @resultFile1
+</div>
+<div>
+    @resultFile2
+</div>
+
+@code{
+    IBrowserFile? _file1;
+    IBrowserFile? _file2;
+
+    string resultFile1;
+    string resultFile2;
+    
+    private void File1(InputFileChangeEventArgs  obj)
+    {
+        _file1 = obj.File;
+    }
+
+    private void File2(InputFileChangeEventArgs obj)
+    {
+        _file2 = obj.File;
+    }
+
+    private async Task StartUpload()
+    {
+        if (_file1 == null || _file2 == null)
+            return;
+
+        var stream1 = _file1.OpenReadStream();
+        var stream2 = _file2.OpenReadStream();
+        
+        // Read stream (ie, convert to MemoryStream) after two IBrowserFiles are open
+        var ms1 = await ToMemoryStreamAsync(stream1);      // Does not Work... Timeout
+        resultFile1 = "Stream 1 " + ms1.Length;
+        // You will never arrive at this line
+        var ms2 = await ToMemoryStreamAsync(stream2);
+        resultFile2 = "Stream 2 " + ms2.Length;
+    }
+    
+    
+    
+    private async Task StartUpload_Working()
+    {
+        if (_file1 == null || _file2 == null)
+            return;
+
+        var stream1 = _file1.OpenReadStream();
+        var ms1 = await ToMemoryStreamAsync(stream1);
+        resultFile1 = "Stream 1 " + ms1.Length;
+        var stream2 = _file2.OpenReadStream();
+        var ms2 = await ToMemoryStreamAsync(stream2);
+        resultFile2 = "Stream 2 " + ms2.Length;
+    }
+    
+    async Task<MemoryStream> ToMemoryStreamAsync(Stream stream)
+    {
+        var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+        return memoryStream;
+    }
+}
